@@ -1,0 +1,37 @@
+procedure TfMainForm.btnSearchClick(Sender: TObject);
+var
+  PrepareData: TPrepareDataResponce;
+begin
+  (* with AnonymousThread *)
+  if IsSelectedTheme(cmbxOwn) and IsSelectedTheme(cmbxTheme) then
+  begin
+    ProgressBar.Visible := true;
+    (* Get selected type from RadioGroup*)
+    TThread.CreateAnonymousThread(
+      procedure
+      begin
+        PrepareData := TPrepareDataResponce.Create(Self);
+        DataSource.DataSet := PrepareData.BuildDataResponce(cmbxOwn.Text, cmbxTheme.Text);
+        repeat // repeat until Query in obj run
+        begin
+          ProgressBar.Visible := False;
+          StatusBar.Panels[3].Text := 'Обработка Excel: ';
+        end;
+        until DataSource.DataSet.RecordSize > 0;
+        (* Save Data in Excell file. *)
+        SaveAsDialog(TypeFormatExport, cmbxTheme.Text, DataSource.DataSet);
+        FreeAndNil(PrepareData);
+        // FreeAndNil(DataSource);//Uncomment after full release
+      end).Start;
+  end;
+
+  (* without AnonymousThread *)
+//   if IsSelectedTheme(cmbxOwn) and IsSelectedTheme(cmbxTheme) then
+//   begin
+//   PrepareData := TPrepareDataResponce.Create(fMainForm);
+//   DataSource.DataSet := PrepareData.BuildDataResponce(cmbxOwn.Text, cmbxTheme.Text);
+//
+//   SaveAsDialog(TypeFormatExport, cmbxTheme.Text, DataSource.DataSet); { true and work }
+//   FreeAndNil(PrepareData);
+//   end;
+end;
